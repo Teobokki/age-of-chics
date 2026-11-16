@@ -1,13 +1,13 @@
 {
-  "version": "1.0.2",
-  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v1.0.2/AGE-OF-CHICS-Setup-1.0.2.exe",
-  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v1.0.2/AGE-OF-CHICS-Setup-1.0.2.exe",
-  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v1.0.2/AGE-OF-CHICS-Portable-1.0.2.exe",
-  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v1.0.2",
-  "sha256": "b449148d7b23faa77e06de9b5ff60fad4b6b360de277a622409fbbe2f0067624",
-  "size": 24826526,
-  "portable_sha256": "8f4766f2c85286949e857c2370d3c1b4ef15512cd058d301c2ff3e5aa30fe285",
-  "portable_size": 31072153,
+  "version": "2.3.0",
+  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.3.0/AGE-OF-CHICS-Setup-2.3.0.exe",
+  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.3.0/AGE-OF-CHICS-Setup-2.3.0.exe",
+  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.3.0/AGE-OF-CHICS-Portable-2.3.0.exe",
+  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v2.3.0",
+  "sha256": "d48b372d42322573c134e4823e99e2f9c42bbc0538b359acf359f0755104e3fe",
+  "size": 25125263,
+  "portable_sha256": "ed4b84e4eff8673a40c62d13398112423f504a98020bdd058ca4e35ea9adaec0",
+  "portable_size": 31635951,
   "published": "2026-11-16",
-  "notes": "AGE OF CHICS™ BY HYPERION 1.0.2 — START-only home screen, About shows only the copyright line, and a new Windows app icon. The H logo stays inside the app."
+  "notes": "AGE OF CHICS™ BY HYPERION 2.3.0 — fixes the Windows app icon so the character photo shows on the exe, installer, shortcuts, and the running window/taskbar. The H logo stays inside the app."
 }
