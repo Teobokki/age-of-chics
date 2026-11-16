@@ -1,13 +1,13 @@
 {
-  "version": "2.3.1",
-  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.3.1/AGE-OF-CHICS-Setup-2.3.1.exe",
-  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.3.1/AGE-OF-CHICS-Setup-2.3.1.exe",
-  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.3.1/AGE-OF-CHICS-Portable-2.3.1.exe",
-  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v2.3.1",
-  "sha256": "a9d2954e8e18200272617c999e3fd04aaa12279e12f77d0afc58cb84e0f56d48",
-  "size": 25125783,
-  "portable_sha256": "b446349956e5e04b80ad17b8e7b91894ecb153ae3a052ff690d980ce22201bec",
-  "portable_size": 31635852,
+  "version": "2.4.0",
+  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.4.0/AGE-OF-CHICS-Setup-2.4.0.exe",
+  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.4.0/AGE-OF-CHICS-Setup-2.4.0.exe",
+  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.4.0/AGE-OF-CHICS-Portable-2.4.0.exe",
+  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v2.4.0",
+  "sha256": "7a677664a642f03e619d15394c80752135e2024fa4a5496fc80badf632512b34",
+  "size": 35938244,
+  "portable_sha256": "cc978a66932de79e81da82024d884ba6d3d367a9553429845c7a4fa32f3a0d10",
+  "portable_size": 46672985,
   "published": "2026-11-16",
-  "notes": "AGE OF CHICS\u2122 BY HYPERION 2.3.1 \u2014 the Windows app icon is the character photo on the exe, installer, shortcuts, the running window and taskbar, and in the store. The yellow H stays as the in-app emblem."
+  "notes": "AGE OF CHICS™ BY HYPERION 2.4.0 — open a PDF or presentation from your PC; the last file is remembered and reloaded from disk so your edits show up."
 }
