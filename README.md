@@ -1,4 +1,4 @@
-# AGE OF CHICS
+# AGE OF CHICS™ BY HYPERION
 
 Standalone presentation app for the AGE OF CHICS deck.
 

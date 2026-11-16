@@ -13,8 +13,8 @@ import threading
 import time
 from urllib.request import Request, urlopen
 
-APP = "AGE OF CHICS"
-APP_VERSION = "1.0.0"
+APP = "AGE OF CHICS™ BY HYPERION"
+APP_VERSION = "1.0.1"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
@@ -96,9 +96,9 @@ QWidget#hline { background: %s; }
 QLabel#apptitle { color: %s; font-size: 15px; font-weight: 700; letter-spacing: 2px; }
 QLabel#muted, QLabel#foot { color: %s; font-size: 11px; }
 QLabel#kicker { color: %s; font-size: 13px; font-weight: 700; letter-spacing: 4px; }
-QLabel#hero { color: %s; font-size: 44px; font-weight: 700; letter-spacing: 3px; }
+QLabel#hero { color: %s; font-size: 36px; font-weight: 700; letter-spacing: 2px; }
 QLabel#sub { color: %s; font-size: 14px; font-weight: 700; letter-spacing: 3px; }
-QLabel#splashTitle { color: %s; font-size: 22px; font-weight: 700; letter-spacing: 3px; }
+QLabel#splashTitle { color: %s; font-size: 16px; font-weight: 700; letter-spacing: 1px; }
 QLabel#splashMsg { color: %s; font-size: 13px; }
 QLabel#counter { color: %s; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
 QPushButton {
@@ -227,6 +227,7 @@ class UpdateSplash(QDialog):
         t = QLabel(APP)
         t.setObjectName("splashTitle")
         t.setAlignment(Qt.AlignCenter)
+        t.setWordWrap(True)
         v.addWidget(t)
         v.addSpacing(10)
         self.msg = QLabel("Checking for updates\u2026")
@@ -468,6 +469,7 @@ class HomePage(QWidget):
         hero = QLabel(APP)
         hero.setObjectName("hero")
         hero.setAlignment(Qt.AlignCenter)
+        hero.setWordWrap(True)
         v.addWidget(hero)
         v.addSpacing(8)
         sub = QLabel("ARVICIA CITY")

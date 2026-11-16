@@ -121,8 +121,9 @@ def make_store_placeholders(emblem: Image.Image):
     d = ImageDraw.Draw(cap)
     font_s = load_font(16, True)
     font_b = load_font(36, True)
-    d.text((270, 120), "EX PRESENTS", font=font_s, fill=GOLD)
-    d.text((270, 150), "AGE OF CHICS", font=font_b, fill=CREAM)
+    d.text((270, 110), "EX PRESENTS", font=font_s, fill=GOLD)
+    d.text((270, 138), "AGE OF CHICS™", font=load_font(28, True), fill=CREAM)
+    d.text((270, 178), "BY HYPERION", font=load_font(16, True), fill=CREAM)
     d.text((270, 210), "ARVICIA CITY", font=load_font(14, True), fill=(160, 160, 155))
     cap.save(os.path.join(STORE, "capsule.jpg"), quality=92, optimize=True)
 
@@ -177,9 +178,10 @@ def _cover_frame(photo, w, h, emblem, tight=False):
     margin = 48 if tight else 64
     canvas.paste(e, (margin, (h - es) // 2))
     tx = margin + es + 36
-    d.text((tx, h // 2 - 70), "EX PRESENTS", font=load_font(18, True), fill=GOLD)
-    d.text((tx, h // 2 - 44), "AGE OF CHICS", font=load_font(52 if not tight else 44, True), fill=CREAM)
-    d.text((tx, h // 2 + 22), "ARVICIA CITY", font=load_font(18, True), fill=(200, 200, 195))
+    d.text((tx, h // 2 - 80), "EX PRESENTS", font=load_font(18, True), fill=GOLD)
+    d.text((tx, h // 2 - 54), "AGE OF CHICS™", font=load_font(44 if not tight else 36, True), fill=CREAM)
+    d.text((tx, h // 2 + 4), "BY HYPERION", font=load_font(22, True), fill=CREAM)
+    d.text((tx, h // 2 + 38), "ARVICIA CITY", font=load_font(18, True), fill=(200, 200, 195))
     return canvas
 
 
@@ -192,7 +194,7 @@ def make_wizard(emblem: Image.Image):
         im.paste(e, ((w - s) // 2, int(h * 0.12)))
         d = ImageDraw.Draw(im)
         font = load_font(max(9, w // 14), True)
-        text = "AGE OF CHICS"
+        text = "AGE OF CHICS™"
         bbox = d.textbbox((0, 0), text, font=font)
         tw = bbox[2] - bbox[0]
         d.text(((w - tw) // 2, int(h * 0.12) + s + 12), text, font=font, fill=CREAM)
@@ -215,7 +217,7 @@ def main():
     splash.paste(e, ((640 - 128) // 2, 48))
     d = ImageDraw.Draw(splash)
     font_b = load_font(28, True)
-    text = "AGE OF CHICS"
+    text = "AGE OF CHICS™"
     bbox = d.textbbox((0, 0), text, font=font_b)
     d.text(((640 - (bbox[2] - bbox[0])) // 2, 190), text, font=font_b, fill=CREAM)
     font_s = load_font(14, False)
