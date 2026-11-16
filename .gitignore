@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+build/
+build1f/
+dist/
+*.log
+.wine/
+docs/dist_shots/
+docs/export_test.pdf
+docs/shots.log
