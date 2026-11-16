@@ -1,7 +1,28 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 ONEFILE = bool(os.environ.get("AOC_ONEFILE"))
+try:
+    from PyInstaller.utils.hooks import collect_all
+except Exception:
+    collect_all = None
+
+def _collect(pkg):
+    if collect_all is None:
+        return [], [], []
+    try:
+        d, b, h = collect_all(pkg)
+        return list(d), list(b), list(h)
+    except Exception:
+        return [], [], []
+
+_d, _b, _h = [], [], []
+for _pkg in ("pypdfium2", "pypdfium2_raw", "comtypes"):
+    d, b, h = _collect(_pkg)
+    _d += d
+    _b += b
+    _h += h
 excl = ['matplotlib', 'scipy', 'pandas', 'IPython', 'pytest', 'torch', 'cv2', 'tkinter',
+        'numpy',
         'PySide6.Qt3DCore', 'PySide6.Qt3DRender', 'PySide6.QtCharts', 'PySide6.QtDataVisualization',
         'PySide6.QtPdf', 'PySide6.QtPdfWidgets', 'PySide6.QtSql', 'PySide6.QtTest', 'PySide6.QtBluetooth',
         'PySide6.QtSensors', 'PySide6.QtSerialPort', 'PySide6.QtDesigner', 'PySide6.QtHelp',
@@ -13,9 +34,14 @@ excl = ['matplotlib', 'scipy', 'pandas', 'IPython', 'pytest', 'torch', 'cv2', 't
         'PySide6.QtHttpServer', 'PySide6.QtLocation', 'PySide6.QtAxContainer', 'PySide6.QtMultimedia']
 a = Analysis(
     ['age_of_chics.py'],
-    datas=[('assets', 'assets')],
-    binaries=[],
-    hiddenimports=[],
+    datas=[('assets', 'assets')] + _d,
+    binaries=_b,
+    hiddenimports=_h + [
+        'pypdfium2', 'pypdfium2.raw', 'pypdfium2_raw', 'pypdfium2.version',
+        'comtypes', 'comtypes.client', 'comtypes.stream',
+        'PIL', 'PIL.Image', 'PIL.PngImagePlugin',
+        'deck_io',
+    ],
     excludes=excl,
     noarchive=False,
 )

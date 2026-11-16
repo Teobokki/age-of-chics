@@ -1,4 +1,6 @@
-"""AGE OF CHICS — standalone presentation app for the bundled deck.
+"""AGE OF CHICS — standalone presentation app.
+
+Opens the bundled deck by default, or a PDF / presentation from the user's PC.
 ©2026 EX Inc./HYPERION DIGITAL ©2026
 """
 from __future__ import annotations
@@ -13,12 +15,15 @@ import threading
 import time
 from urllib.request import Request, urlopen
 
+import deck_io
+
 APP = "AGE OF CHICS™ BY HYPERION"
-APP_VERSION = "2.3.1"
+APP_VERSION = "2.4.0"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
-SLIDE_COUNT = 7
+BUNDLED_SLIDE_COUNT = 7
+SLIDE_COUNT = BUNDLED_SLIDE_COUNT  # bundled default; live count is len(pixmaps)
 DECK_PPTX = "AGE OF CHICS.pptx"
 DECK_PDF = "AGE OF CHICS.pdf"
 
@@ -375,6 +380,35 @@ class ThumbBar(QWidget):
             lay.addWidget(b)
         lay.addStretch(1)
 
+    def _clear(self):
+        lay = self.layout()
+        while lay.count():
+            item = lay.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+        self.buttons = []
+
+    def rebuild(self, pixmaps):
+        self._clear()
+        lay = self.layout()
+        lay.addStretch(1)
+        for i, pm in enumerate(pixmaps, start=1):
+            b = QPushButton()
+            b.setObjectName("thumb")
+            b.setCursor(Qt.PointingHandCursor)
+            b.setFocusPolicy(Qt.NoFocus)
+            thumb = pm.scaled(128, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            b.setIcon(QIcon(thumb))
+            b.setIconSize(QSize(thumb.width(), thumb.height()))
+            b.setFixedSize(thumb.width() + 8, thumb.height() + 8)
+            b.setProperty("index", i)
+            b.clicked.connect(lambda _=False, n=i: self.jumped.emit(n))
+            self.buttons.append(b)
+            lay.addWidget(b)
+        lay.addStretch(1)
+
     def set_current(self, index):
         for b in self.buttons:
             on = b.property("index") == index
@@ -412,12 +446,21 @@ class PresentWindow(QWidget):
         self.stage.clicked.connect(self.next_slide)
 
     def _apply(self):
+        if not self.pixmaps:
+            return
+        self.index = max(1, min(len(self.pixmaps), int(self.index)))
         self.stage.set_pixmap(self.pixmaps[self.index - 1])
         self.badge.setText("%d / %d" % (self.index, len(self.pixmaps)))
         self.badge.adjustSize()
         self.badge.move(16, 16)
         self.badge.show()
         self._hide_badge.start(1800)
+
+    def set_pixmaps(self, pixmaps, index=None):
+        self.pixmaps = pixmaps
+        if index is not None:
+            self.index = index
+        self._apply()
 
     def next_slide(self):
         if self.index < len(self.pixmaps):
@@ -522,12 +565,10 @@ class Main(QMainWindow):
         self.index = 1
         self.present_win = None
         self.pixmaps = []
-        for i in range(1, SLIDE_COUNT + 1):
-            pm = QPixmap(slide_path(i))
-            if pm.isNull():
-                pm = QPixmap(1280, 720)
-                pm.fill(QColor(0, 0, 0))
-            self.pixmaps.append(pm)
+        self._external_path = None
+        self._export_pdf_path = deck_file(DECK_PDF)
+        self._source_for_open = deck_file(DECK_PPTX)
+        self._load_bundled_pixmaps()
 
         root = QWidget()
         root.setObjectName("root")
@@ -616,13 +657,23 @@ class Main(QMainWindow):
         b_pres.clicked.connect(self.start_present)
         bh.addWidget(b_pres)
         bh.addStretch(1)
+        b_open_file = QPushButton("Open file…")
+        b_open_file.setObjectName("flat")
+        b_open_file.setToolTip("Open a PDF or presentation from your PC")
+        b_open_file.clicked.connect(self.open_file)
+        bh.addWidget(b_open_file)
+        b_reload = QPushButton("Reload")
+        b_reload.setObjectName("flat")
+        b_reload.setToolTip("Re-read the current file from disk (Ctrl+R)")
+        b_reload.clicked.connect(self.reload_file)
+        bh.addWidget(b_reload)
         b_pdf = QPushButton("Export PDF")
         b_pdf.setObjectName("flat")
         b_pdf.clicked.connect(self.export_pdf)
         bh.addWidget(b_pdf)
         b_open = QPushButton("Open original deck")
         b_open.setObjectName("flat")
-        b_open.setToolTip("Open the bundled presentation in your default app")
+        b_open.setToolTip("Open the current file in your default app")
         b_open.clicked.connect(self.open_original)
         bh.addWidget(b_open)
         vv.addWidget(bar)
@@ -643,11 +694,22 @@ class Main(QMainWindow):
         QShortcut(QKeySequence(Qt.Key_PageDown), self, self.next_slide)
         QShortcut(QKeySequence(Qt.Key_PageUp), self, self.prev_slide)
         QShortcut(QKeySequence(Qt.Key_Home), self, lambda: self.goto_slide(1))
-        QShortcut(QKeySequence(Qt.Key_End), self, lambda: self.goto_slide(SLIDE_COUNT))
+        QShortcut(QKeySequence(Qt.Key_End), self, lambda: self.goto_slide(self.slide_count()))
         QShortcut(QKeySequence(Qt.Key_F5), self, self.start_present)
         QShortcut(QKeySequence("Ctrl+E"), self, self.export_pdf)
-        QShortcut(QKeySequence("Ctrl+O"), self, self.open_original)
+        QShortcut(QKeySequence("Ctrl+O"), self, self.open_file)
+        QShortcut(QKeySequence("Ctrl+R"), self, self.reload_file)
+        QShortcut(QKeySequence("Ctrl+Shift+O"), self, self.open_original)
         QShortcut(QKeySequence(Qt.Key_Escape), self, self._esc)
+
+        skip_restore = "--shots" in sys.argv or "--skip-restore" in sys.argv
+        if not skip_restore:
+            self._restore_last_file()
+        # --open PATH for tests and scripted shots
+        if "--open" in sys.argv:
+            i = sys.argv.index("--open")
+            if i + 1 < len(sys.argv):
+                self.load_external(sys.argv[i + 1], remember=False, show_errors=True)
 
         self.show_home()
         self._refresh()
@@ -655,8 +717,12 @@ class Main(QMainWindow):
     def _build_menus(self):
         mb = self.menuBar()
         f = mb.addMenu("File")
+        f.addAction("Open file\u2026\tCtrl+O", self.open_file)
+        f.addAction("Reload\tCtrl+R", self.reload_file)
+        f.addAction("Use bundled deck", self.use_bundled)
+        f.addAction("Open original deck\tCtrl+Shift+O", self.open_original)
+        f.addSeparator()
         f.addAction("Export PDF\tCtrl+E", self.export_pdf)
-        f.addAction("Open original deck\tCtrl+O", self.open_original)
         f.addSeparator()
         f.addAction("Exit", self.close)
         v = mb.addMenu("View")
@@ -689,8 +755,168 @@ class Main(QMainWindow):
         self.show_slides()
         self.start_present()
 
+    def slide_count(self):
+        return max(1, len(self.pixmaps))
+
+    def _source_label(self):
+        if self._external_path:
+            return os.path.basename(self._external_path)
+        return "Bundled deck"
+
+    def _apply_title(self):
+        if self._external_path:
+            self.setWindowTitle("%s \u2014 %s" % (APP, os.path.basename(self._external_path)))
+        else:
+            self.setWindowTitle(APP)
+
+    def _pixmaps_from_paths(self, paths):
+        out = []
+        for path in paths:
+            pm = QPixmap(path)
+            if pm.isNull():
+                pm = QPixmap(1280, 720)
+                pm.fill(QColor(0, 0, 0))
+            out.append(pm)
+        return out
+
+    def _load_bundled_pixmaps(self):
+        self.pixmaps = []
+        for i in range(1, BUNDLED_SLIDE_COUNT + 1):
+            pm = QPixmap(slide_path(i))
+            if pm.isNull():
+                pm = QPixmap(1280, 720)
+                pm.fill(QColor(0, 0, 0))
+            self.pixmaps.append(pm)
+        self._external_path = None
+        self._export_pdf_path = deck_file(DECK_PDF)
+        self._source_for_open = deck_file(DECK_PPTX)
+
+    def _rebuild_thumbs(self):
+        self.thumbs.rebuild(self.pixmaps)
+        self.thumbs.set_current(self.index)
+
+    def _busy(self, message, fn):
+        dlg = QDialog(self)
+        dlg.setWindowTitle(APP)
+        dlg.setWindowIcon(load_app_icon())
+        dlg.setModal(True)
+        dlg.setMinimumWidth(420)
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(20, 18, 20, 18)
+        lab = QLabel(message)
+        lab.setWordWrap(True)
+        lay.addWidget(lab)
+        bar = QProgressBar()
+        bar.setRange(0, 0)
+        bar.setTextVisible(False)
+        lay.addWidget(bar)
+        dlg.show()
+        QApplication.processEvents()
+
+        def progress(i, n, msg):
+            if n:
+                bar.setRange(0, n)
+                bar.setValue(i)
+            if msg:
+                lab.setText(msg)
+            QApplication.processEvents()
+
+        try:
+            return fn(progress)
+        finally:
+            dlg.close()
+            dlg.deleteLater()
+            QApplication.processEvents()
+
+    def load_bundled(self):
+        self._load_bundled_pixmaps()
+        self.index = 1
+        self._rebuild_thumbs()
+        if self.present_win is not None:
+            self.present_win.set_pixmaps(self.pixmaps, self.index)
+        self._apply_title()
+        self._refresh()
+
+    def use_bundled(self):
+        deck_io.set_last_file("")
+        self.load_bundled()
+        self.status.showMessage("Bundled deck  \u00b7  " + COPYRIGHT)
+
+    def load_external(self, path, remember=True, show_errors=True):
+        try:
+            def work(progress):
+                return deck_io.load_pages(path, progress=progress)
+
+            pages, pdf_path, source = self._busy("Loading slides\u2026", work)
+            pms = self._pixmaps_from_paths(pages)
+            if not pms:
+                raise deck_io.DeckError("This file has no pages.")
+            self.pixmaps = pms
+            self._external_path = source
+            self._export_pdf_path = pdf_path or source
+            self._source_for_open = source
+            if remember:
+                deck_io.set_last_file(source)
+            self.index = 1
+            self._rebuild_thumbs()
+            if self.present_win is not None:
+                self.present_win.set_pixmaps(self.pixmaps, self.index)
+            self._apply_title()
+            self._refresh()
+            return True
+        except deck_io.DeckError as e:
+            if show_errors:
+                QMessageBox.warning(self, APP, str(e))
+            return False
+        except Exception as e:
+            if show_errors:
+                QMessageBox.warning(self, APP, "Could not open this file.\n%s" % e)
+            return False
+
+    def _restore_last_file(self):
+        last = deck_io.get_last_file()
+        if not last:
+            return
+        if not os.path.isfile(last):
+            deck_io.set_last_file("")
+            return
+        self.load_external(last, remember=True, show_errors=True)
+
+    def open_file(self):
+        start = ""
+        if self._external_path and os.path.isdir(os.path.dirname(self._external_path)):
+            start = self._external_path
+        elif deck_io.get_last_file():
+            start = deck_io.get_last_file()
+        else:
+            start = os.path.join(os.environ.get("USERPROFILE") or os.path.expanduser("~"), "Documents")
+        path, _ = QFileDialog.getOpenFileName(self, "Open file", start, deck_io.OPEN_FILTER)
+        if not path:
+            return
+        if self.load_external(path, remember=True, show_errors=True):
+            self.show_slides()
+
+    def reload_file(self):
+        if self._external_path:
+            if not os.path.isfile(self._external_path):
+                QMessageBox.warning(
+                    self, APP,
+                    "The file is no longer at:\n%s\nThe bundled deck will be shown instead."
+                    % self._external_path,
+                )
+                deck_io.set_last_file("")
+                self.load_bundled()
+                return
+            if self.load_external(self._external_path, remember=True, show_errors=True):
+                self.status.showMessage(
+                    "Reloaded %s  \u00b7  %s" % (os.path.basename(self._external_path), COPYRIGHT)
+                )
+        else:
+            self.load_bundled()
+            self.status.showMessage("Reloaded bundled deck  \u00b7  " + COPYRIGHT)
+
     def goto_slide(self, n):
-        n = max(1, min(SLIDE_COUNT, int(n)))
+        n = max(1, min(self.slide_count(), int(n)))
         self.index = n
         if self.stack.currentIndex() != 1:
             self.show_slides()
@@ -700,7 +926,7 @@ class Main(QMainWindow):
     def next_slide(self):
         if self.stack.currentIndex() != 1:
             return
-        if self.index < SLIDE_COUNT:
+        if self.index < self.slide_count():
             self.index += 1
             self._refresh()
 
@@ -712,13 +938,20 @@ class Main(QMainWindow):
             self._refresh()
 
     def _refresh(self):
+        if not self.pixmaps:
+            return
+        self.index = max(1, min(self.slide_count(), int(self.index)))
         self.stage.set_pixmap(self.pixmaps[self.index - 1])
-        self.counter.setText("%d / %d" % (self.index, SLIDE_COUNT))
+        self.counter.setText("%d / %d" % (self.index, self.slide_count()))
         self.thumbs.set_current(self.index)
         self.btn_prev.setEnabled(self.index > 1)
-        self.btn_next.setEnabled(self.index < SLIDE_COUNT)
+        self.btn_next.setEnabled(self.index < self.slide_count())
+        self._apply_title()
         if self.stack.currentIndex() == 1:
-            self.status.showMessage("Slide %d of %d  \u00b7  %s" % (self.index, SLIDE_COUNT, COPYRIGHT))
+            self.status.showMessage(
+                "Slide %d of %d  \u00b7  %s  \u00b7  %s"
+                % (self.index, self.slide_count(), self._source_label(), COPYRIGHT)
+            )
 
     def start_present(self):
         if self.present_win is not None:
@@ -742,11 +975,14 @@ class Main(QMainWindow):
         win.activateWindow()
 
     def export_pdf(self):
-        src = deck_file(DECK_PDF)
-        if not os.path.isfile(src):
-            QMessageBox.warning(self, APP, "The bundled PDF is missing.")
+        src = self._export_pdf_path or deck_file(DECK_PDF)
+        if not src or not os.path.isfile(src):
+            QMessageBox.warning(self, APP, "No PDF is available to export.")
             return
-        suggested = os.path.join(downloads_dir(), DECK_PDF)
+        suggested_name = os.path.basename(src) if src.lower().endswith(".pdf") else (
+            os.path.splitext(os.path.basename(self._external_path or DECK_PDF))[0] + ".pdf"
+        )
+        suggested = os.path.join(downloads_dir(), suggested_name)
         path, _ = QFileDialog.getSaveFileName(
             self, "Export PDF", suggested, "PDF (*.pdf);;All files (*.*)"
         )
@@ -763,18 +999,22 @@ class Main(QMainWindow):
         QMessageBox.information(self, APP, "Saved:\n" + path)
 
     def open_original(self):
-        src = deck_file(DECK_PPTX)
-        if not os.path.isfile(src):
-            QMessageBox.warning(self, APP, "The bundled presentation is missing.")
+        src = self._source_for_open or deck_file(DECK_PPTX)
+        if not src or not os.path.isfile(src):
+            QMessageBox.warning(self, APP, "The presentation file is missing.")
             return
-        # Copy out of the bundle so the default app can open a normal file path.
-        dest = os.path.join(downloads_dir(), DECK_PPTX)
-        try:
-            if os.path.abspath(src) != os.path.abspath(dest):
-                shutil.copyfile(src, dest)
-            target = dest if os.path.isfile(dest) else src
-        except Exception:
+        # For the bundled deck, copy out of the package so the default app can open it.
+        # For a file opened from the PC, open that path directly so edits go to the real file.
+        if self._external_path:
             target = src
+        else:
+            dest = os.path.join(downloads_dir(), os.path.basename(src) or DECK_PPTX)
+            try:
+                if os.path.abspath(src) != os.path.abspath(dest):
+                    shutil.copyfile(src, dest)
+                target = dest if os.path.isfile(dest) else src
+            except Exception:
+                target = src
         ok = QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.abspath(target)))
         if not ok:
             QMessageBox.information(
@@ -913,6 +1153,54 @@ def take_shots(app, win: Main, splash_pm, out_dir):
     shutil.copyfile(src_pdf, dest_pdf)
     L("pdf_copy", os.path.getsize(dest_pdf), "from", os.path.getsize(src_pdf))
     L("pptx", os.path.getsize(deck_file(DECK_PPTX)))
+
+    # Open a distinct external PDF so shots prove user-file loading.
+    ext_pdf = os.path.join(out_dir, "external_test.pdf")
+    deck_io.write_sample_pdf(ext_pdf)
+    L("external_pdf", os.path.getsize(ext_pdf))
+    ok = win.load_external(ext_pdf, remember=False, show_errors=False)
+    L("load_external", ok, "pages", win.slide_count(), "name", win._source_label())
+    win.show_slides()
+    win.goto_slide(1)
+    app.processEvents()
+    time.sleep(0.2)
+    app.processEvents()
+    save("screenshot_open_file.png")
+    if win.slide_count() >= 2:
+        win.goto_slide(2)
+        app.processEvents()
+        time.sleep(0.15)
+        app.processEvents()
+        save("screenshot_open_file_page2.png")
+
+    # Presentation-without-converter message (expected on machines with no converter).
+    dummy = os.path.join(out_dir, "dummy_deck.pptx")
+    import zipfile
+    with zipfile.ZipFile(dummy, "w") as z:
+        z.writestr("[Content_Types].xml", "<Types></Types>")
+
+    def _grab_need_pdf():
+        box = None
+        for w in app.topLevelWidgets():
+            if isinstance(w, QMessageBox) and w.isVisible():
+                box = w
+                break
+        if box is not None:
+            save("screenshot_open_pptx_message.png", box)
+            box.done(0)
+        else:
+            L("pptx message missing")
+
+    # Only grab the message if conversion is not available (typical under Wine).
+    # load_external shows the warning synchronously; hook the timer first.
+    QTimer.singleShot(300, _grab_need_pdf)
+    win.load_external(dummy, remember=False, show_errors=True)
+    app.processEvents()
+    # Restore the external PDF for any later inspection.
+    win.load_external(ext_pdf, remember=False, show_errors=False)
+    win.show_slides()
+    app.processEvents()
+
     L("wine", is_wine())
     L("done")
     log.close()
