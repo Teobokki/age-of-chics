@@ -93,7 +93,7 @@ def emblem_square(size: int) -> Image.Image:
 
 
 def save_ico(square: Image.Image, path: str):
-    sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
+    sizes = [(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
     square.convert("RGBA").save(path, format="ICO", sizes=sizes)
 
 
@@ -210,7 +210,18 @@ def main():
     os.makedirs(ASSETS, exist_ok=True)
     emblem = emblem_square(512)
     emblem.save(os.path.join(ASSETS, "emblem.png"))
-    save_ico(emblem, os.path.join(ASSETS, "logo.ico"))
+    # Windows app icon is the character photo; the in-app emblem stays the H mark.
+    icon_src = os.path.join(ASSETS, "new_icon_src.jpg")
+    if os.path.isfile(icon_src):
+        raw = Image.open(icon_src).convert("RGB")
+        side = min(raw.size)
+        left = (raw.width - side) // 2
+        top = (raw.height - side) // 2
+        photo = raw.crop((left, top, left + side, top + side))
+        save_ico(photo, os.path.join(ASSETS, "logo.ico"))
+        photo.resize((256, 256), Image.Resampling.LANCZOS).save(os.path.join(ASSETS, "logo256.png"))
+    else:
+        save_ico(emblem, os.path.join(ASSETS, "logo.ico"))
     # splash background used by the update-check window (also a standalone image)
     splash = Image.new("RGB", (640, 360), DARK)
     e = emblem.resize((128, 128), Image.Resampling.LANCZOS)

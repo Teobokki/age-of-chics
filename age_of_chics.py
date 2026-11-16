@@ -14,7 +14,7 @@ import time
 from urllib.request import Request, urlopen
 
 APP = "AGE OF CHICS™ BY HYPERION"
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
@@ -485,31 +485,9 @@ class HomePage(QWidget):
         b.setCursor(Qt.PointingHandCursor)
         b.clicked.connect(self.start.emit)
         row.addWidget(b)
-        p = QPushButton("PRESENT")
-        p.setObjectName("flat")
-        p.setCursor(Qt.PointingHandCursor)
-        p.clicked.connect(self.present.emit)
-        p.setToolTip("Fullscreen present mode (F5)")
-        row.addWidget(p)
         row.addStretch(1)
         v.addLayout(row)
-        v.addSpacing(14)
-        row2 = QHBoxLayout()
-        row2.setSpacing(12)
-        row2.addStretch(1)
-        for text, tip, sig in (
-            ("Export PDF", "Save the bundled PDF", self.export_pdf),
-            ("Open original deck", "Open the bundled presentation in your default app", self.open_deck),
-            ("About", "About " + APP, self.about),
-        ):
-            b = QPushButton(text)
-            b.setObjectName("flat")
-            b.setCursor(Qt.PointingHandCursor)
-            b.setToolTip(tip)
-            b.clicked.connect(sig.emit)
-            row2.addWidget(b)
-        row2.addStretch(1)
-        v.addLayout(row2)
+        v.addStretch(3)
         v.addStretch(3)
         foot = QLabel(COPYRIGHT)
         foot.setObjectName("foot")
@@ -796,11 +774,7 @@ class Main(QMainWindow):
             QPixmap(res_path("assets", "emblem.png")).scaled(72, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         )
         m.setText("<b>%s</b> &nbsp; v%s" % (APP, APP_VERSION))
-        m.setInformativeText(
-            "A standalone presentation of the AGE OF CHICS deck. "
-            "Watch the slides, present them fullscreen, or export a PDF.\n\n"
-            "%s" % COPYRIGHT
-        )
+        m.setInformativeText(COPYRIGHT)
         m.exec()
 
     def check_updates_manual(self):
@@ -854,6 +828,20 @@ def take_shots(app, win: Main, splash_pm, out_dir):
     time.sleep(0.2)
     app.processEvents()
     save("screenshot_home.png")
+    def _grab_about():
+        about = None
+        for w in app.topLevelWidgets():
+            if isinstance(w, QMessageBox) and w.isVisible():
+                about = w
+                break
+        if about is not None:
+            save("screenshot_about.png", about)
+            about.done(0)
+        else:
+            L("about dialog missing")
+    QTimer.singleShot(400, _grab_about)
+    win.about()  # modal; the timer runs inside exec()
+    app.processEvents()
     win.goto_slide(4)
     app.processEvents()
     time.sleep(0.2)
