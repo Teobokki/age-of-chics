@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v1.0.0/AGE-OF-CHICS-Setup-1.0.0.exe",
+  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v1.0.0/AGE-OF-CHICS-Setup-1.0.0.exe",
+  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v1.0.0/AGE-OF-CHICS-Portable-1.0.0.exe",
+  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v1.0.0",
+  "sha256": "58ad1d8c7b4e475f3be5b91d760c1fba75c1d5f19493bcec22042ce3442f6ffe",
+  "size": 24318785,
+  "portable_sha256": "70417f70aa8838ec06b30c7b082e4b4edbf26f30e3c501e962ca1d256b03066c",
+  "portable_size": 30784802,
+  "published": "2026-11-16",
+  "notes": "AGE OF CHICS 1.0.0 \u2014 standalone presentation of the AGE OF CHICS deck, with fullscreen present mode, PDF export, and an update check on startup."
+}
