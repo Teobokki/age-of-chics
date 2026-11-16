@@ -93,8 +93,49 @@ def emblem_square(size: int) -> Image.Image:
 
 
 def save_ico(square: Image.Image, path: str):
-    sizes = [(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)]
-    square.convert("RGBA").save(path, format="ICO", sizes=sizes)
+    """Windows-compatible ICO: 32bpp DIB + AND mask for sizes < 256, PNG for 256."""
+    import struct
+    from io import BytesIO
+
+    def dib(im):
+        im = im.convert("RGBA")
+        w, h = im.size
+        pix = list(im.getdata())
+        xor = bytearray()
+        for y in range(h - 1, -1, -1):
+            for x in range(w):
+                r, g, b, a = pix[y * w + x]
+                xor += bytes((b, g, r, a))
+        row_bytes = ((w + 31) // 32) * 4
+        mask = bytearray()
+        for y in range(h - 1, -1, -1):
+            row = bytearray(row_bytes)
+            for x in range(w):
+                if pix[y * w + x][3] < 128:
+                    row[x // 8] |= 0x80 >> (x % 8)
+            mask += row
+        header = struct.pack("<IIIHHIIIIII", 40, w, h * 2, 1, 32, 0, len(xor), 0, 0, 0, 0)
+        return header + xor + mask
+
+    sizes = [16, 32, 48, 64, 128, 256]
+    src = square.convert("RGBA")
+    entries = []
+    for s in sizes:
+        im = src.resize((s, s), Image.Resampling.LANCZOS)
+        if s >= 256:
+            buf = BytesIO(); im.save(buf, format="PNG"); payload = buf.getvalue()
+        else:
+            payload = dib(im)
+        entries.append((s, payload))
+    out = struct.pack("<HHH", 0, 1, len(entries))
+    cursor = 6 + 16 * len(entries)
+    body = b""
+    for s, payload in entries:
+        w = 0 if s >= 256 else s
+        out += struct.pack("<BBBBHHII", w, w, 0, 0, 1, 32, len(payload), cursor)
+        body += payload
+        cursor += len(payload)
+    open(path, "wb").write(out + body)
 
 
 def cover_text(im: Image.Image, lines):
@@ -108,11 +149,22 @@ def cover_text(im: Image.Image, lines):
 
 def make_store_placeholders(emblem: Image.Image):
     os.makedirs(STORE, exist_ok=True)
-    # icon
-    emblem.resize((256, 256), Image.Resampling.LANCZOS).save(os.path.join(STORE, "icon.png"))
-    emblem.resize((256, 256), Image.Resampling.LANCZOS).save(os.path.join(ASSETS, "icon.png"))
+    # Windows / store app icon is the character photo, not the in-app H emblem.
+    icon_src = os.path.join(ASSETS, "new_icon_src.jpg")
+    if os.path.isfile(icon_src):
+        raw = Image.open(icon_src).convert("RGB")
+        side = min(raw.size)
+        left = (raw.width - side) // 2
+        top = (raw.height - side) // 2
+        photo = raw.crop((left, top, left + side, top + side))
+    else:
+        photo = emblem
+    photo.resize((256, 256), Image.Resampling.LANCZOS).save(os.path.join(STORE, "icon.png"))
+    photo.resize((256, 256), Image.Resampling.LANCZOS).save(os.path.join(ASSETS, "icon.png"))
     for s in (48, 64, 128, 256, 512):
-        emblem.resize((s, s), Image.Resampling.LANCZOS).save(os.path.join(ASSETS, "icon%d.png" % s))
+        photo.resize((s, s), Image.Resampling.LANCZOS).save(os.path.join(ASSETS, "icon%d.png" % s))
+    for s in (16, 32, 48, 64, 128, 256):
+        photo.resize((s, s), Image.Resampling.LANCZOS).save(os.path.join(ASSETS, "appicon-%d.png" % s))
 
     # capsule 616x353
     cap = Image.new("RGB", (616, 353), DARK)

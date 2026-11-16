@@ -1,4 +1,4 @@
-﻿#define MyVer "1.0.2"
+﻿#define MyVer "2.3.0"
 #define MyApp "AGE OF CHICS™ BY HYPERION"
 #define MyExe "AGE OF CHICS"
 [Setup]

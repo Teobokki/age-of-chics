@@ -14,7 +14,7 @@ import time
 from urllib.request import Request, urlopen
 
 APP = "AGE OF CHICS™ BY HYPERION"
-APP_VERSION = "1.0.2"
+APP_VERSION = "2.3.0"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
@@ -52,6 +52,23 @@ def res_path(*parts):
     else:
         base = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base, *parts)
+
+
+def load_app_icon():
+    """Window / taskbar / exe icon: the character photo, never the in-app H emblem."""
+    icon = QIcon()
+    for s in (16, 32, 48, 64, 128, 256):
+        path = res_path("assets", "appicon-%d.png" % s)
+        if os.path.isfile(path):
+            icon.addFile(path, QSize(s, s))
+    ico = res_path("assets", "logo.ico")
+    if os.path.isfile(ico):
+        icon.addFile(ico)
+    if icon.isNull():
+        png = res_path("assets", "logo256.png")
+        if os.path.isfile(png):
+            icon.addFile(png)
+    return icon
 
 
 def vtuple(v):
@@ -210,7 +227,7 @@ class UpdateSplash(QDialog):
         super().__init__(None, Qt.FramelessWindowHint | Qt.Dialog)
         self.setObjectName("splash")
         self.setWindowTitle(APP)
-        self.setWindowIcon(QIcon(res_path("assets", "logo.ico")))
+        self.setWindowIcon(load_app_icon())
         self.setModal(True)
         self.setFixedSize(520, 300)
         self.setStyleSheet(QSS)
@@ -373,7 +390,7 @@ class PresentWindow(QWidget):
         super().__init__(None, Qt.Window)
         self.setObjectName("present")
         self.setWindowTitle(APP + " \u2014 Present")
-        self.setWindowIcon(QIcon(res_path("assets", "logo.ico")))
+        self.setWindowIcon(load_app_icon())
         self.setStyleSheet(QSS)
         self.pixmaps = pixmaps
         self.index = index
@@ -499,7 +516,7 @@ class Main(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(APP)
-        self.setWindowIcon(QIcon(res_path("assets", "logo.ico")))
+        self.setWindowIcon(load_app_icon())
         self.resize(1280, 800)
         self.setMinimumSize(960, 600)
         self.index = 1
@@ -828,6 +845,34 @@ def take_shots(app, win: Main, splash_pm, out_dir):
     time.sleep(0.2)
     app.processEvents()
     save("screenshot_home.png")
+    # Proof image: title-bar uses the live window icon (photo), home still shows the H emblem.
+    def _icon_proof():
+        bar_h = 36
+        home_pm = win.grab()
+        w, h = home_pm.width(), home_pm.height()
+        canvas = QPixmap(w, h + bar_h)
+        canvas.fill(QColor(32, 32, 32))
+        p = QPainter(canvas)
+        p.fillRect(0, 0, w, bar_h, QColor(24, 24, 24))
+        ico = win.windowIcon().pixmap(24, 24)
+        if ico.isNull():
+            L("windowIcon pixmap is null")
+        else:
+            p.drawPixmap(8, (bar_h - 24) // 2, ico)
+        p.setPen(QColor(244, 244, 240))
+        font = QFont("DejaVu Sans", 11)
+        font.setBold(True)
+        p.setFont(font)
+        p.drawText(40, 0, w - 48, bar_h, int(Qt.AlignVCenter | Qt.AlignLeft), APP)
+        p.drawPixmap(0, bar_h, home_pm)
+        p.end()
+        path = os.path.join(out_dir, "screenshot_window_icon.png")
+        ok = canvas.save(path)
+        L("shot", "screenshot_window_icon.png", "ok" if ok else "FAIL", path, os.path.getsize(path) if ok else 0)
+        icon_path = os.path.join(out_dir, "screenshot_window_icon_only.png")
+        win.windowIcon().pixmap(128, 128).save(icon_path)
+        L("shot", "screenshot_window_icon_only.png")
+    _icon_proof()
     def _grab_about():
         about = None
         for w in app.topLevelWidgets():
@@ -884,7 +929,7 @@ def main():
     app.setApplicationName(APP)
     app.setOrganizationName("EX Inc.")
     app.setApplicationVersion(APP_VERSION)
-    app.setWindowIcon(QIcon(res_path("assets", "logo.ico")))
+    app.setWindowIcon(load_app_icon())
     for f in ("DejaVuSans.ttf", "DejaVuSans-Bold.ttf"):
         QFontDatabase.addApplicationFont(res_path("assets", "fonts", f))
     QFont.insertSubstitutions("Segoe UI", ["Segoe UI Symbol", "DejaVu Sans"])
