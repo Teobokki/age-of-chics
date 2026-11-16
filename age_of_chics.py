@@ -14,7 +14,7 @@ import time
 from urllib.request import Request, urlopen
 
 APP = "AGE OF CHICS™ BY HYPERION"
-APP_VERSION = "2.3.0"
+APP_VERSION = "2.3.1"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
