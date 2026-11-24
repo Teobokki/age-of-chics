@@ -19,7 +19,7 @@ from urllib.request import Request, urlopen
 import deck_io
 
 APP = "AGE OF CHICS™ BY HYPERION"
-APP_VERSION = "2.5.0"
+APP_VERSION = "2.5.1"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
@@ -27,8 +27,8 @@ BUNDLED_SLIDE_COUNT = 7
 SLIDE_COUNT = BUNDLED_SLIDE_COUNT  # bundled default; live count is len(pixmaps)
 DECK_PPTX = "AGE OF CHICS.pptx"
 DECK_PDF = "AGE OF CHICS.pdf"
-ZVR_LABEL = "debauche lux zvr™ JANUARY 2027"
-ZVR_CAPTION = "debauche lux zvr™ — JANUARY 2027"
+ZVR_LABEL = "debauche lux zvr™ JANUARY 12 2027"
+ZVR_CAPTION = "debauche lux zvr™ — JANUARY 12 2027"
 ZVR_RELEASE = datetime(2027, 1, 12, 0, 0, 0)
 ZVR_IMAGE = "debauche_lux_zvr.jpg"
 
