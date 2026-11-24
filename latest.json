@@ -1,13 +1,13 @@
 {
-  "version": "2.4.0",
-  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.4.0/AGE-OF-CHICS-Setup-2.4.0.exe",
-  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.4.0/AGE-OF-CHICS-Setup-2.4.0.exe",
-  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.4.0/AGE-OF-CHICS-Portable-2.4.0.exe",
-  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v2.4.0",
-  "sha256": "7a677664a642f03e619d15394c80752135e2024fa4a5496fc80badf632512b34",
-  "size": 35938244,
-  "portable_sha256": "cc978a66932de79e81da82024d884ba6d3d367a9553429845c7a4fa32f3a0d10",
-  "portable_size": 46672985,
-  "published": "2026-11-16",
-  "notes": "AGE OF CHICS™ BY HYPERION 2.4.0 — open a PDF or presentation from your PC; the last file is remembered and reloaded from disk so your edits show up."
+  "version": "2.5.0",
+  "url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.5.0/AGE-OF-CHICS-Setup-2.5.0.exe",
+  "installer_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.5.0/AGE-OF-CHICS-Setup-2.5.0.exe",
+  "portable_url": "https://github.com/Teobokki/age-of-chics/releases/download/v2.5.0/AGE-OF-CHICS-Portable-2.5.0.exe",
+  "release_url": "https://github.com/Teobokki/age-of-chics/releases/tag/v2.5.0",
+  "sha256": "2ab9ac607794d4539d7338e7496b0a05f0664a34b16b41fc79d0d6d678561ce3",
+  "size": 36993867,
+  "portable_sha256": "009151f507d720502741ae1b18adcad94b03b357e9342779fb5c3870ced56aa6",
+  "portable_size": 47726908,
+  "published": "2026-11-24",
+  "notes": "AGE OF CHICS™ BY HYPERION 2.5.0 — debauche lux zvr™ JANUARY 2027 teaser beside START, with a live countdown to 12 January 2027."
 }
