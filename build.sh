@@ -3,7 +3,7 @@
 set -e
 export PATH=/workspace/wine-portable/current/bin:$PATH WINEPREFIX=/workspace/exwifi/.wine WINEDEBUG=-all
 cd /workspace/age-of-chics
-V=2.4.0
+V=2.5.0
 rm -rf build dist build1f
 wine 'C:\Python311\python.exe' -m PyInstaller --noconfirm "AGE OF CHICS.spec" > pyi.log 2>&1; echo PYI_DONE
 wine 'C:\InnoSetup\ISCC.exe' installer.iss > iss.log 2>&1; echo ISS_DONE

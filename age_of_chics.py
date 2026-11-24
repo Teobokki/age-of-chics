@@ -13,12 +13,13 @@ import ssl
 import sys
 import threading
 import time
+from datetime import datetime
 from urllib.request import Request, urlopen
 
 import deck_io
 
 APP = "AGE OF CHICS™ BY HYPERION"
-APP_VERSION = "2.4.0"
+APP_VERSION = "2.5.0"
 COPYRIGHT = "\u00a92026 EX Inc./HYPERION DIGITAL \u00a92026"
 REPO = "Teobokki/age-of-chics"
 UPDATE_URL = "https://raw.githubusercontent.com/%s/main/latest.json" % REPO
@@ -26,6 +27,21 @@ BUNDLED_SLIDE_COUNT = 7
 SLIDE_COUNT = BUNDLED_SLIDE_COUNT  # bundled default; live count is len(pixmaps)
 DECK_PPTX = "AGE OF CHICS.pptx"
 DECK_PDF = "AGE OF CHICS.pdf"
+ZVR_LABEL = "debauche lux zvr™ JANUARY 2027"
+ZVR_CAPTION = "debauche lux zvr™ — JANUARY 2027"
+ZVR_RELEASE = datetime(2027, 1, 12, 0, 0, 0)
+ZVR_IMAGE = "debauche_lux_zvr.jpg"
+
+def zvr_countdown_text():
+    """Live countdown to 12 January 2027 00:00 local time. 'OUT NOW' once reached."""
+    secs = int((ZVR_RELEASE - datetime.now()).total_seconds())
+    if secs <= 0:
+        return "OUT NOW"
+    days, rem = divmod(secs, 86400)
+    hours, rem = divmod(rem, 3600)
+    mins, secs = divmod(rem, 60)
+    return "%dd %02dh %02dm %02ds" % (days, hours, mins, secs)
+
 
 # Cinematic dark palette. Accent is the gold from the EX/H mark. No glow.
 BG = "#0B0B0D"
@@ -201,6 +217,29 @@ QMessageBox { background: %s; }
     PANEL,
 )
 
+
+
+QSS += """
+QWidget#teaser { background: #000000; }
+QWidget#zvrbtn {
+  background: #F5A804; color: #111; border: 1px solid #F5A804; border-radius: 2px;
+}
+QWidget#zvrbtn:hover { background: #FFC43A; }
+QWidget#zvrbtn:pressed { background: #C48403; }
+QLabel#zvrlabel {
+  background: transparent; color: #111; font-size: 14px; font-weight: 700; letter-spacing: 2px;
+}
+QLabel#zvrcount {
+  background: transparent; color: #111; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+}
+QWidget#teaserbar { background: #0B0B0D; }
+QLabel#teasercaption {
+  background: transparent; color: #F4F4F0; font-size: 20px; font-weight: 700; letter-spacing: 2px;
+}
+QLabel#teasercount {
+  background: transparent; color: #F5A804; font-size: 16px; font-weight: 700; letter-spacing: 2px;
+}
+"""
 
 def check_update_sync(timeout=10):
     """Fetch latest.json. Returns ('ok', data) or ('error', message). Never disables TLS."""
@@ -501,8 +540,96 @@ class PresentWindow(QWidget):
         self.closed.emit()
 
 
+class ZvrHomeButton(QWidget):
+    """Accent-family home button with a live countdown on a second line."""
+    clicked = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("zvrbtn")
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setCursor(Qt.PointingHandCursor)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 10, 16, 10)
+        lay.setSpacing(2)
+        lab = QLabel(ZVR_LABEL)
+        lab.setObjectName("zvrlabel")
+        lab.setAlignment(Qt.AlignCenter)
+        lab.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.count = QLabel(zvr_countdown_text())
+        self.count.setObjectName("zvrcount")
+        self.count.setAlignment(Qt.AlignCenter)
+        self.count.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        lay.addWidget(lab)
+        lay.addWidget(self.count)
+        self._timer = QTimer(self)
+        self._timer.setInterval(1000)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start()
+
+    def _tick(self):
+        self.count.setText(zvr_countdown_text())
+
+    def mousePressEvent(self, ev):
+        if ev.button() == Qt.LeftButton:
+            self.clicked.emit()
+
+    def mouseReleaseEvent(self, ev):
+        ev.accept()
+
+
+class TeaserPage(QWidget):
+    """Letterboxed teaser image, caption, countdown, and Back. Esc is handled by Main."""
+    back = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("teaser")
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(0)
+        self.stage = SlideStage()
+        pm = QPixmap(res_path("assets", ZVR_IMAGE))
+        self.stage.set_pixmap(pm)
+        v.addWidget(self.stage, 1)
+        bar = QWidget()
+        bar.setObjectName("teaserbar")
+        bar.setAttribute(Qt.WA_StyledBackground, True)
+        bv = QVBoxLayout(bar)
+        bv.setContentsMargins(24, 16, 24, 20)
+        bv.setSpacing(8)
+        cap = QLabel(ZVR_CAPTION)
+        cap.setObjectName("teasercaption")
+        cap.setAlignment(Qt.AlignCenter)
+        cap.setWordWrap(True)
+        bv.addWidget(cap)
+        self.count = QLabel(zvr_countdown_text())
+        self.count.setObjectName("teasercount")
+        self.count.setAlignment(Qt.AlignCenter)
+        bv.addWidget(self.count)
+        row = QHBoxLayout()
+        row.addStretch(1)
+        back = QPushButton("Back")
+        back.setObjectName("flat")
+        back.setCursor(Qt.PointingHandCursor)
+        back.clicked.connect(self.back.emit)
+        row.addWidget(back)
+        row.addStretch(1)
+        bv.addSpacing(4)
+        bv.addLayout(row)
+        v.addWidget(bar)
+        self._timer = QTimer(self)
+        self._timer.setInterval(1000)
+        self._timer.timeout.connect(self._tick)
+        self._timer.start()
+
+    def _tick(self):
+        self.count.setText(zvr_countdown_text())
+
+
 class HomePage(QWidget):
     start = Signal()
+    zvr = Signal()
     present = Signal()
     export_pdf = Signal()
     open_deck = Signal()
@@ -545,6 +672,9 @@ class HomePage(QWidget):
         b.setCursor(Qt.PointingHandCursor)
         b.clicked.connect(self.start.emit)
         row.addWidget(b)
+        z = ZvrHomeButton()
+        z.clicked.connect(self.zvr.emit)
+        row.addWidget(z)
         row.addStretch(1)
         v.addLayout(row)
         v.addStretch(3)
@@ -616,6 +746,7 @@ class Main(QMainWindow):
 
         self.home = HomePage()
         self.home.start.connect(self.show_slides)
+        self.home.zvr.connect(self.show_teaser)
         self.home.present.connect(self.present_from_home)
         self.home.export_pdf.connect(self.export_pdf)
         self.home.open_deck.connect(self.open_original)
@@ -683,6 +814,10 @@ class Main(QMainWindow):
         vv.addWidget(self.thumbs)
         self.stack.addWidget(viewer)
 
+        self.teaser = TeaserPage()
+        self.teaser.back.connect(self.show_home)
+        self.stack.addWidget(self.teaser)
+
         self._build_menus()
         self.status = QStatusBar()
         self.setStatusBar(self.status)
@@ -737,13 +872,18 @@ class Main(QMainWindow):
         h.addAction("About " + APP, self.about)
 
     def _esc(self):
-        if self.stack.currentIndex() == 1:
+        if self.stack.currentIndex() != 0:
             self.show_home()
 
     def show_home(self):
         self.stack.setCurrentIndex(0)
         self.btn_home.setEnabled(False)
         self.status.showMessage(COPYRIGHT)
+
+    def show_teaser(self):
+        self.stack.setCurrentIndex(2)
+        self.btn_home.setEnabled(True)
+        self.status.showMessage(ZVR_CAPTION)
 
     def show_slides(self):
         self.stack.setCurrentIndex(1)
@@ -1085,6 +1225,15 @@ def take_shots(app, win: Main, splash_pm, out_dir):
     time.sleep(0.2)
     app.processEvents()
     save("screenshot_home.png")
+    save("aoc_home_zvr.png")
+    win.show_teaser()
+    app.processEvents()
+    time.sleep(0.2)
+    app.processEvents()
+    save("screenshot_teaser.png")
+    save("aoc_teaser_zvr.png")
+    win.show_home()
+    app.processEvents()
     # Proof image: title-bar uses the live window icon (photo), home still shows the H emblem.
     def _icon_proof():
         bar_h = 36
